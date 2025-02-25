@@ -1,0 +1,32 @@
+Compare two time series and choose the one that demonstrates a clearer and more consistent pattern, exhibiting regular fluctuations, trends, or cycles, while avoiding excessive noise, random fluctuations, or sudden irregularities. Look for data that reflects some form of underlying structure, such as trend, seasonality, or cyclical behavior.
+
+For example:
+
+1. **Trend Pattern**: A time series with a clear and steady upward or downward trend, such as [5, 8, 11, 14, 17] and [43, 36, 29, 22, 15, 8, 1], demonstrates a well-defined, consistent direction.
+   
+2. **Cyclic Pattern**: A time series showing periodic cycles, like [30, 25, 20, 25, 30, 35, 40, 35, 30] and [1, 3, 1, 3, 1], repeating every few steps, suggests cyclical behavior over time.
+
+3. **Stationary Pattern**: A time series where the values fluctuate around a stable mean without a clear upward or downward trend, such as [10, 12, 11, 10, 13] and [10, 10, 10, 10, 10], shows consistent, predictable variation.
+
+4. **Mixed Pattern**: A time series that combines trends with cyclical or seasonal behavior, such as [10, 15, 20, 25, 30, 28, 25, 23, 28, 33, 38, 43, 41, 38, 36], where both a rising trend and periodic fluctuations are visible, would indicate a complex but structured pattern.
+
+On the other hand, avoid time series with the following characteristics:
+
+1. **Random or Irregular Fluctuations**: A time series with large, unpredictable jumps, such as [10, 50, 20, 5, 80], is erratic and lacks consistent patterns.
+
+2. **Noise-Dominant Data**: A time series filled with random noise or frequent outliers, like [20, 5, 15, 100, 3], introduces significant unpredictability that makes it hard to discern any underlying trend or pattern.
+
+3. **Missing or Incomplete Patterns**: A time series with large gaps or inconsistent segments, such as [15, ?, ?, 30, 40], is incomplete and might mislead pattern identification.
+
+Remember, focus on time series that show clear, repeatable patterns of behavior. Even if the series contains some minor fluctuations, the overall trend, cycle, or stationary nature should be identifiable.
+
+Aspects that should NOT influence your judgment:
+- The source or origin of the time series data.
+- The length of the time series.
+- The order in which the time series are presented.
+
+[Option {label_a}] ... {text_a} ...
+
+[Option {label_b}] ... {text_b} ...
+
+Now you have to choose between either {label_a} or {label_b}. Respond only with a single word.

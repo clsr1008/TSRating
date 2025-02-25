@@ -1,0 +1,22 @@
+Compare two time series and choose the one which exhibits more significant and well-defined amplitude, e.g., consistent and large variations in the range of values across the series, reflecting strong oscillations or signal intensity with minimal noise or randomness.
+
+For example:
+A time series with a large and consistent amplitude, such as [0, 10, -10, 10, -10, 10], would be considered significant and well-defined.
+Conversely, a time series with small or inconsistent amplitude, such as [1, 2, 1, 2, 3, 2], is less likely to exhibit well-defined amplitude behavior.
+A flat time series with minimal changes, such as [5, 5, 5, 5, 5], would generally be considered to lack significant amplitude.
+
+Aspects that should NOT influence your judgement:
+The source or origin of the time series data.
+The length of the time series.
+The order in which the time series are presented.
+
+The time series may have similar characteristics, but you should still make a relative judgment and choose the label of the preferred time series.
+
+[Option {label_a}]
+... {text_a} ...
+
+[Option {label_b}]
+... {text_b} ...
+
+Now you have to choose between either {label_a} or {label_b}. Respond only with a single word.
+

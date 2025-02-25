@@ -1,0 +1,15 @@
+long_term_forecast_TRA_96_32_Linear_ftS_random_0.5_Exp_0  
+mse:0.9584901332855225, mae:0.8264927864074707, dtw:Not calculated
+
+long_term_forecast_TRA_96_32_CNN_ftS_random_0.5_Exp_0  
+mse:0.350597083568573, mae:0.502565324306488, dtw:Not calculated
+
+long_term_forecast_TRA_96_32_iTransformer_ftS_random_0.5_Exp_0  
+mse:0.07792404294013977, mae:0.205414280295372, dtw:Not calculated
+
+long_term_forecast_TRA_96_32_PatchTST_ftS_random_0.5_Exp_0  
+mse:0.12829190492630005, mae:0.27279332280158997, dtw:Not calculated
+
+long_term_forecast_TRA_96_32_TimeMixer_ftS_random_0.5_Exp_0  
+mse:0.09080881625413895, mae:0.22267349064350128, dtw:Not calculated
+

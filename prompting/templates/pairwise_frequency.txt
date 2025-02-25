@@ -1,0 +1,21 @@
+Compare two time series and choose the one which exhibits more significant and well-defined frequency or cyclical patterns, e.g., regular oscillations, periodic behavior, or repetitive cycles that are consistent across the series, with minimal noise or randomness.
+
+For example:
+A time series with a consistent cyclical pattern, such as [10, 20, 10, 20, 10, 20], would be considered significant and well-defined.
+Conversely, a time series with irregular peaks or inconsistent cycles, such as [10, 50, 20, 5, 30], is less likely to exhibit a well-defined cyclical pattern.
+A flat time series with little to no change, such as [10, 10, 10, 10, 10], would generally be considered to lack significant frequency or cyclical behavior.
+
+Aspects that should NOT influence your judgement:
+The source or origin of the time series data.
+The length of the time series.
+The order in which the time series are presented.
+
+The time series may have similar characteristics, but you should still make a relative judgment and choose the label of the preferred time series.
+
+[Option {label_a}]
+... {text_a} ...
+
+[Option {label_b}]
+... {text_b} ...
+
+Now you have to choose between either {label_a} or {label_b}. Respond only with a single word.

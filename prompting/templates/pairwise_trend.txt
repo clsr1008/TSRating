@@ -1,0 +1,21 @@
+Compare two time series and choose the one which exhibits a more significant and well-defined trend, e.g., a clear directional movement (upward or downward) over time that is sustained across the series, with minimal noise, anomalies, or random fluctuations.
+
+For example:
+A time series with a steady upward trend, such as [10, 15, 20, 25, 30], would be considered significant and well-defined.
+Conversely, a time series with frequent random spikes or drops, such as [10, 50, 20, 5, 30], is less likely to exhibit a well-defined trend.
+A flat time series with little to no change, such as [10, 10, 10, 10, 10], would generally be considered to lack a significant trend.
+
+Aspects that should NOT influence your judgement:
+The source or origin of the time series data.
+The length of the time series.
+The order in which the time series are presented.
+
+The time series may have similar characteristics, but you should still make a relative judgment and choose the label of the preferred time series.
+
+[Option {label_a}]
+... {text_a} ...
+
+[Option {label_b}]
+... {text_b} ...
+
+Now you have to choose between either {label_a} or {label_b}. Respond only with a single word.
