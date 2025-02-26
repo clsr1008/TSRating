@@ -3,13 +3,14 @@ from models.ARIMA import Model
 from dataset import data_provider
 
 def configure_model_params(args):
+    """ You can change model parameters here """
     if args.model in ['TimesNet', 'LightTS', 'DLinear', 'LSTM', 'CNN', 'Linear']:
         args.dff = 512
         args.d_model = 256
         args.e_layers = 2
         args.d_layers = 1
         args.factor = 3
-        args.enc_in = 1  # 单变量
+        args.enc_in = 1
         args.dec_in = 1
         args.c_out = 1
         args.top_k = 5
@@ -28,7 +29,7 @@ def configure_model_params(args):
         args.e_layers = 2
         args.d_layers = 1
         args.factor = 3
-        args.enc_in = 1  # 单变量
+        args.enc_in = 1
         args.dec_in = 1
         args.c_out = 1
         args.train_epochs = 3
@@ -38,7 +39,7 @@ def configure_model_params(args):
         args.e_layers = 2
         args.d_layers = 1
         args.factor = 3
-        args.enc_in = 1  # 单变量
+        args.enc_in = 1
         args.dec_in = 1
         args.c_out = 1
         args.batch_size = 16
@@ -48,7 +49,7 @@ def configure_model_params(args):
         args.e_layers = 3
         args.d_layers = 1
         args.factor = 3
-        args.enc_in = 1  # 输入维度
+        args.enc_in = 1
         args.dec_in = 1
         args.c_out = 1
         args.batch_size = 32
@@ -64,7 +65,7 @@ def configure_model_params(args):
         args.d_ff = 512
         args.batch_size = 16
         args.learning_rate = 0.0005
-        args.enc_in = 1  # 输入维度
+        args.enc_in = 1
         args.dec_in = 1
         args.c_out = 1
         args.e_layers = 3
@@ -74,24 +75,20 @@ def configure_model_params(args):
 
 def print_experiment_results(score_keys, proportions, results, num_iterations):
     """
-    打印每一轮的实验结果。
-    :param score_keys: 评分指标名称列表
-    :param proportions: 不同数据比例
-    :param results: 包含实验结果的字典
-    :param num_iterations: 实验总轮数
+    Print the experimental results for each round.
+    :param score_keys: List of score metric names.
+    :param proportions: Different data proportions or models.
+    :param results: Dictionary containing the experimental results.
+    :param num_iterations: Total number of iterations in the experiment.
     """
-    print("\n实验结果")
+    print("\nexperiment results")
 
-    # 表头设置
     header = ["Score Key"] + proportions
 
-    # 确定最大列宽，避免对齐混乱
     column_width = max(len(str(item)) for item in header)
-
-    # 逐轮打印每个评分指标和数据比例下的 RMSE
     for i in range(num_iterations):
         print("\n" + f"Iteration {i + 1}")
-        print("\t".join([f"{item:<{column_width}}" for item in header])) # 打印表头
+        print("\t".join([f"{item:<{column_width}}" for item in header]))
         for score_key in score_keys:
             row = [score_key]
             for proportion in proportions:
@@ -100,9 +97,8 @@ def print_experiment_results(score_keys, proportions, results, num_iterations):
                 row.append(value)
             print("\t".join([f"{item:<{column_width}}" for item in row]))
 
-    # 打印平均结果
-    print("\n" + "平均结果")
-    print("\t".join([f"{item:<{column_width}}" for item in header]))  # 打印表头
+    print("\n" + "average results")
+    print("\t".join([f"{item:<{column_width}}" for item in header]))
     for score_key in score_keys:
         row = [score_key]
         for proportion in proportions:
@@ -114,9 +110,8 @@ def print_experiment_results(score_keys, proportions, results, num_iterations):
                 row.append("N/A")
         print("\t".join([f"{item:<{column_width}}" for item in row]))
 
-    # 打印最小结果
-    print("\n最小结果")
-    print("\t".join([f"{item:<{column_width}}" for item in header]))  # 打印表头
+    print("\n" + "smallest results")
+    print("\t".join([f"{item:<{column_width}}" for item in header]))
     for score_key in score_keys:
         row = [score_key]
         for proportion in proportions:
@@ -138,26 +133,17 @@ def arima_training_and_testing(args, setting):
     :param rmse_list: List to store RMSE values
     """
     print(f">>>>>>> Start ARIMA model training and testing: {setting} >>>>>>>>>>>>>>>>>")
-    # args.proportion = 0.1
-    args.temperature = 2.0
-    # 使用 data_provider 加载数据
-    data_set, data_loader = data_provider(args, flag="train")  # 获取训练数据
-
-    # 创建 ARIMA 模型实例
-    arima_model = Model(args)  # 创建 Model 实例，传入配置参数
+    data_set, data_loader = data_provider(args, flag="train")
+    arima_model = Model(args)
 
     listrmse = []
-    # 遍历训练集中的每一条时间序列进行训练和预测
     for i, data_point in enumerate(data_set):
-        # 假设 data_point 是一个四元组，前两个元素是 x_enc 和 y_true，后两个元素不使用
-        x_enc, y_true, _, _ = data_point  # 只取前两个元素
+        x_enc, y_true, _, _ = data_point
         y_true = y_true[len(y_true) // 2:]
 
-        # 使用 x_enc 前96个数据进行 ARIMA 训练，预测后32个数据
-        forecast = arima_model.arima_forecast(x_enc[:, 0])  # 假设使用第一个特征进行预测
+        forecast = arima_model.arima_forecast(x_enc[:, 0])
 
-        # 计算 RMSE（预测值与真实目标值之间的差异）
-        rmse = np.sqrt(((forecast - y_true[:, 0]) ** 2).mean())  # 使用目标部分进行 RMSE 计算
+        rmse = np.sqrt(((forecast - y_true[:, 0]) ** 2).mean())
         listrmse.append(rmse)
 
     rmse_avg = np.mean(listrmse)

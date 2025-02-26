@@ -14,6 +14,7 @@ from data_preparation.uea import subsample, interpolate_missing, Normalizer, col
 from sktime.datasets import load_from_tsfile_to_dataframe
 import warnings
 # from utils.augmentation import run_augmentation_single
+
 class Dataset_Custom(Dataset):
     def __init__(self, file_path, flag='train', size=None, features='S',
                  target='OT', scale=True, timeenc=1, freq='h', start_idx=4000, end_idx=8000, data='custom'):
@@ -48,7 +49,7 @@ class Dataset_Custom(Dataset):
     def __read_data__(self):
         self.scaler = StandardScaler()
         df_raw = pd.read_csv(self.file_path, encoding='ISO-8859-1')
-        df_raw = df_raw.iloc[self.start_idx:self.end_idx] #截取连续的4000个点
+        df_raw = df_raw.iloc[self.start_idx:self.end_idx]
 
         '''
         df_raw.columns: ['date', ...(other features), target feature]
@@ -259,77 +260,63 @@ class UEAloader(Dataset):
 
 def select_train_samples(dataset, score_file, score_key, proportion, temperature):
     """
-    从 Dataset_Custom 数据集中选择样本，并返回子集数据集。
+    Select samples from the Dataset_Custom dataset and return a subset dataset.
 
-    参数:
-    - dataset: Dataset_Custom 对象，数据集实例。
-    - selection_mode: str，选择模式，可选 "random" 或 "score_based"。
-    - score_file: str，仅当选择模式为 "score_based" 时需要，包含得分的文件路径，支持 .jsonl 格式。
-    - score_key: str，仅当选择模式为 "score_based" 时需要，得分文件中对应的键名。
-    - proportion: float，选择样本的比例（必填）。
-    - temperature: float，控制采样多样性的温度参数（默认值为 1.0）。
+    Parameters:
+    - dataset: Dataset_Custom object, the dataset instance.
+    - score_file: str, file path containing scores, supports .jsonl format.
+    - score_key: str, the key corresponding to the scores in the score file.
+    - proportion: float, the proportion of samples to select (required).
+    - temperature: float, temperature parameter to control sampling diversity (default is 0.0).
 
-    返回:
-    - SubsetDataset 对象，包含筛选后的样本子集。
+    Returns:
+    - SubsetDataset object, containing the filtered sample subset.
     """
     if proportion is None or proportion <= 0 or proportion > 1:
-        raise ValueError("必须提供一个有效的 proportion（范围为 0 到 1 之间的浮点数）。")
+        raise ValueError("You must provide a valid proportion (a float between 0 and 1).")
 
-    # 获取数据集样本总数
     total_samples = len(dataset)
-
-    # 根据比例计算样本数量
     num_samples = int(total_samples * proportion)
 
     if score_key == "random":
-        # 随机选择
         selected_indices = random.sample(range(total_samples), num_samples)
     elif score_key == "mix":
         if score_file is None:
-            raise ValueError("当选择模式为 'mix' 时，必须提供 score_file。")
+            raise ValueError("When the score key is 'mix', you must provide a score_file.")
 
-        # 加载得分文件（支持 .jsonl 格式）
-        scores_list = []  # 用于存储所有以 'score' 结尾的得分
+        scores_list = []
         with open(score_file, 'r') as f:
             for line in f:
                 score_data = json.loads(line.strip())
-                # 提取所有以 'score' 结尾的字段
                 mix_scores = [value for key, value in score_data.items() if key.endswith("score")]
                 if mix_scores:
                     scores_list.append(mix_scores)
 
-        # 确保每个样本都有完整的得分维度
         if len(scores_list) != total_samples:
-            raise ValueError("得分文件中的样本数量与数据集样本总数不匹配。")
+            raise ValueError("The number of samples in the score file does not match the total number of samples in the dataset.")
 
-        # 将所有得分维度合并为 NumPy 数组
         scores_array = np.array(scores_list)  # shape: (total_samples, num_dimensions)
 
-        # 对每个维度的得分进行归一化（min-max 标准化）
+        # Normalize the scores for each dimension (min-max normalization)
         min_vals = np.min(scores_array, axis=0)
         max_vals = np.max(scores_array, axis=0)
         normalized_scores = (scores_array - min_vals) / (max_vals - min_vals + 1e-8)
 
-        # 计算每个样本的平均得分
-        mean_scores = np.mean(normalized_scores, axis=1)  # 平均化所有维度得分
+        # Calculate the average score for each sample
+        mean_scores = np.mean(normalized_scores, axis=1)
 
-        # 使用温度调整选择分数最高的样本
-        if temperature == 0.0:
-            selected_indices = np.argsort(-mean_scores)[:num_samples].tolist() #加负号是降序，不加是升序
+        if temperature == 0.0: # top-k sampling
+            selected_indices = np.argsort(-mean_scores)[:num_samples].tolist()
         else:
-            # Softmax 计算
-            exp_scores = np.exp(mean_scores / temperature)  # 应用温度调整的 softmax 分子
-            probabilities = exp_scores / np.sum(exp_scores)  # 归一化为概率分布
-
-            # 根据概率分布进行无放回采样
+            exp_scores = np.exp(mean_scores / temperature)
+            probabilities = exp_scores / np.sum(exp_scores)
             selected_indices = np.random.choice(
                 range(total_samples), size=num_samples, replace=False, p=probabilities
             ).tolist()
     else:
         if score_file is None:
-            raise ValueError("当选择模式为 'score_based' 时，必须提供 score_file。")
+            raise ValueError("you must provide a score_file")
 
-        # 加载得分文件（支持 .jsonl 格式）
         scores = []
         with open(score_file, 'r') as f:
             for line in f:
@@ -338,28 +325,19 @@ def select_train_samples(dataset, score_file, score_key, proportion, temperature
                     scores.append(score_data[score_key])
 
         if len(scores) != total_samples:
-            raise ValueError("得分文件中的样本数量与数据集样本总数不匹配。")
+            raise ValueError("The number of samples in the score file does not match the total number of samples in the dataset.")
 
-        scores = np.array(scores)  # 转换为 NumPy 数组
-        if temperature == 0.0 or score_key in ['DataOob', 'DataShapley', 'KNNShapley', 'TimeInf']:
-            selected_indices = np.argsort(-scores)[:num_samples].tolist() #加负号是降序，不加是升序
+        scores = np.array(scores)
+        if temperature == 0.0 or score_key in ['DataOob', 'DataShapley', 'KNNShapley', 'TimeInf']: # top-k sampling
+            selected_indices = np.argsort(-scores)[:num_samples].tolist()
             # print(selected_indices)
         else:
-            # 对 scores 进行标准化，使方差为 1
-            # mean_score = np.mean(scores)
-            # std_score = np.std(scores) + 1e-8  # 避免分母为 0
-            # scores = (scores - mean_score) / std_score
-
-            # Softmax 计算
-            exp_scores = np.exp(scores / temperature)  # 应用温度调整的 softmax 分子
-            probabilities = exp_scores / np.sum(exp_scores)  # 归一化为概率分布
-
-            # 根据概率分布进行无放回采样
+            exp_scores = np.exp(scores / temperature)
+            probabilities = exp_scores / np.sum(exp_scores)
             selected_indices = np.random.choice(
                 range(total_samples), size=num_samples, replace=False, p=probabilities
             ).tolist()
 
-    # 返回子集数据集
     return Subset(dataset, selected_indices)
 
 

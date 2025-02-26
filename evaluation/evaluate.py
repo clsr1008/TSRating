@@ -9,39 +9,31 @@ from configure_params import configure_model_params, print_experiment_results
 
 
 def main(args):
-    args.task_name = 'long_term_forecast'
-    args.file_path = "../datasets/traffic/traffic.csv"
-    args.data = 'custom'
-    args.seq_len = 96  # 输入序列长度
-    args.label_len = 32  # 标签长度
-    args.pred_len = 32  # 预测长度
-    args.start_idx = 4000
-    args.end_idx = 8000
-    args.feature = 'S'
-    args.model_id = 'TRA_96_32'
-    args.target = 'OT'
-    # args.timeenc = 0
-    #mape
+    # Example usage with replaceable parameters
+    args.task_name = 'long_term_forecast'  # to be changed
+    args.file_path = "../datasets/traffic/traffic.csv"  # to be changed
+    args.data = 'custom'  # to be changed (m4 for short_term_forecast, UEA for classification)
+    args.seq_len = 96  # Input sequence length to be changed (ignore when classification)
+    args.label_len = 32  # Label length to be changed (ignore when classification)
+    args.pred_len = 32  # Prediction length to be changed (ignore when classification)
+    args.start_idx = 4000  # to be changed (ignore when classification)
+    args.end_idx = 8000  # to be changed (ignore when classification)
+    args.target = 'OT'  # to be changed (ignore when classification)
+    args.timeenc = 1
 
-    args.num_workers = 0 #变小有用
-    args.score_file = "../middleware/traffic/annotation.jsonl"
+    args.score_file = "../middleware/traffic/annotation.jsonl"  # to be changed
     # args.score_key = "pattern_score"
-    args.proportion = 0.5
-    args.temperature = 1.0 #升序为0.0
-
-    args.model = 'Nonstationary_Transformer'
-    configure_model_params(args)
-    args.itr = 1
+    args.proportion = 0.5  # to be changed
+    # args.model = 'Nonstationary_Transformer'
+    # configure_model_params(args)
+    args.itr = 1  # to be changed
 
     # score_keys = ['random','DataOob','DataShapley','KNNShapley','mix','trend_score','frequency_score','amplitude_score','pattern_score']
-    score_keys = ['random', 'DataOob', 'DataShapley', 'KNNShapley', 'TimeInf', 'mix']
-    models = ['Linear','CNN','iTransformer','PatchTST','TimeMixer']
+    score_keys = ['random', 'DataOob', 'DataShapley', 'KNNShapley', 'TimeInf', 'mix']  # to be changed
+    models = ['Linear','CNN','iTransformer','PatchTST','TimeMixer']  # to be changed
     # proportions = [1.0, 0.95, 0.9, 0.85, 0.8, 0.75, 0.7, 0.65, 0.6, 0.55]
-    #升序改dataset文件
 
-    results = {key: {model: [] for model in models} for key in score_keys}  # 初始化结果存储结构
-
-
+    results = {key: {model: [] for model in models} for key in score_keys}
     if args.task_name == 'long_term_forecast' or args.task_name == 'short_term_forecast':
         Exp = Exp_Forecast
     elif args.task_name == 'classification':
@@ -53,10 +45,9 @@ def main(args):
             args.score_key = score_key
             for model in models:
                 # args.proportion = proportion
-                args.model = model #这里记得切换
+                args.model = model
                 configure_model_params(args)
 
-                # 设置实验名称，记录参数
                 setting = '{}_{}_{}_ft{}_{}_{}_{}_{}'.format(
                     args.task_name,
                     args.model_id,
@@ -67,24 +58,18 @@ def main(args):
                     args.des, ii
                 )
 
-                # if args.model == "ARIMA":
-                #     # 调用 ARIMA 封装好的训练和测试函数
-                #     rmse = arima_training_and_testing(args, setting)
-                # else:
                 print(f">>>>>>> Start training: {setting} >>>>>>>>>>>>>>>>>")
 
-                exp = Exp(args)  # 初始化实验类
-                exp.train(setting)  # 训练
-                result = exp.test(setting)  # 测试
+                exp = Exp(args)
+                exp.train(setting)
+                result = exp.test(setting)
 
-                # 更新当前结果
                 if score_key not in results:
                     results[score_key] = {}
                 if model not in results[score_key]:
                     results[score_key][model] = []
                 results[score_key][model].append(result)
 
-                # 清空 GPU 缓存
                 if args.gpu_type == 'mps':
                     torch.backends.mps.empty_cache()
                 elif args.gpu_type == 'cuda':
@@ -92,19 +77,14 @@ def main(args):
 
     print_experiment_results(score_keys, models, results, args.itr)
 
-    # 删除 ./checkpoints/ 文件夹
     checkpoints_path = "./checkpoints/"
     if os.path.exists(checkpoints_path):
         shutil.rmtree(checkpoints_path)
-        print(f"已删除文件夹: {checkpoints_path}")
+        print(f"Folder deleted: {checkpoints_path}")
     else:
-        print(f"文件夹不存在: {checkpoints_path}")
+        print(f"Folder does not exist: {checkpoints_path}")
 
 def set_random_seed(seed: int = 2021):
-    """
-    设置随机种子以确保实验结果的可复现性。
-    :param seed: 要设置的随机种子值，默认为 2021
-    """
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -118,30 +98,23 @@ if __name__ == '__main__':
     # basic config
     parser.add_argument('--task_name', type=str,  default='long_term_forecast',
                         help='task name, options:[long_term_forecast, short_term_forecast, imputation, classification, anomaly_detection]')
-    # parser.add_argument('--is_training', type=int, required=True, default=1, help='status')
     parser.add_argument('--model_id', type=str,  default='test', help='model id')
     parser.add_argument('--model', type=str, default='Autoformer',
                         help='model name, options: [Autoformer, Transformer, TimesNet]')
 
     parser.add_argument('--start_idx', type=int,  default=4000, help='start_idx')
     parser.add_argument('--end_idx', type=int,  default=8000, help='end_idx')
-    parser.add_argument('--scale', type=bool, default=True, help='是否对数据进行归一化')
-    parser.add_argument('--timeenc', type=int, default=1, help='时间编码的模式 (0: 无时间编码, 1: 使用时间编码)')
+    parser.add_argument('--scale', type=bool, default=True, help='Whether to normalize the data')
+    parser.add_argument('--timeenc', type=int, default=1,
+                        help='Time encoding mode (0: No time encoding, 1: Use time encoding)')
 
-
-    parser.add_argument('--score_file', type=str, default='../middleware/electricity/annotation.jsonl',
-                        help='得分文件路径')
-    parser.add_argument('--score_key', type=str, default='random',
-                        help='得分文件中使用的键')
-    parser.add_argument('--proportion', type=float, default=0.5,
-                        help='选择样本的比例 (0 到 1)')
-    parser.add_argument('--temperature', type=float, default=0.0,
-                        help='采样的温度')
+    parser.add_argument('--score_file', type=str, default='../middleware/electricity/annotation.jsonl', help='Path to the score file')
+    parser.add_argument('--score_key', type=str, default='random', help='Key used in the score file')
+    parser.add_argument('--proportion', type=float, default=0.5, help='Proportion of samples to select (between 0 and 1)')
+    parser.add_argument('--temperature', type=float, default=0.0, help='Temperature for sampling')
 
     # data loader
     parser.add_argument('--data', type=str, default='ETTh1', help='dataset type')
-    # parser.add_argument('--root_path', type=str, default='./data/ETT/', help='root path of the data file')
-    # parser.add_argument('--data_path', type=str, default='ETTh1.csv', help='data file')
     parser.add_argument('--file_path', type=str, default='../datasets/electricity/electricity.csv', help='data file')
     parser.add_argument('--features', type=str, default='S',
                         help='forecasting task, options:[M, S, MS]; M:multivariate predict multivariate, S:univariate predict univariate, MS:multivariate predict univariate')
@@ -156,12 +129,6 @@ if __name__ == '__main__':
     parser.add_argument('--pred_len', type=int, default=96, help='prediction sequence length')
     # parser.add_argument('--seasonal_patterns', type=str, default='Monthly', help='subset for M4')
     parser.add_argument('--inverse', action='store_true', help='inverse output data', default=False)
-
-    # # inputation task
-    # parser.add_argument('--mask_rate', type=float, default=0.25, help='mask ratio')
-    #
-    # # anomaly detection task
-    # parser.add_argument('--anomaly_ratio', type=float, default=0.25, help='prior anomaly ratio (%%)')
 
     # model define
     parser.add_argument('--expand', type=int, default=2, help='expansion factor for Mamba')
@@ -198,7 +165,7 @@ if __name__ == '__main__':
                         help='the length of segmen-wise iteration of SegRNN')
 
     # optimization
-    parser.add_argument('--num_workers', type=int, default=10, help='data loader num workers')
+    parser.add_argument('--num_workers', type=int, default=0, help='data loader num workers')
     parser.add_argument('--itr', type=int, default=1, help='experiments times')
     parser.add_argument('--train_epochs', type=int, default=10, help='train epochs')
     parser.add_argument('--batch_size', type=int, default=32, help='batch size of train input data')
@@ -220,34 +187,6 @@ if __name__ == '__main__':
     parser.add_argument('--p_hidden_dims', type=int, nargs='+', default=[128, 128],
                         help='hidden layer dimensions of projector (List)')
     parser.add_argument('--p_hidden_layers', type=int, default=2, help='number of hidden layers in projector')
-
-    # # metrics (dtw)
-    # parser.add_argument('--use_dtw', type=bool, default=False,
-    #                     help='the controller of using dtw metric (dtw is time consuming, not suggested unless necessary)')
-
-    # # Augmentation
-    # parser.add_argument('--augmentation_ratio', type=int, default=0, help="How many times to augment")
-    # parser.add_argument('--seed', type=int, default=2, help="Randomization seed")
-    # parser.add_argument('--jitter', default=False, action="store_true", help="Jitter preset augmentation")
-    # parser.add_argument('--scaling', default=False, action="store_true", help="Scaling preset augmentation")
-    # parser.add_argument('--permutation', default=False, action="store_true",
-    #                     help="Equal Length Permutation preset augmentation")
-    # parser.add_argument('--randompermutation', default=False, action="store_true",
-    #                     help="Random Length Permutation preset augmentation")
-    # parser.add_argument('--magwarp', default=False, action="store_true", help="Magnitude warp preset augmentation")
-    # parser.add_argument('--timewarp', default=False, action="store_true", help="Time warp preset augmentation")
-    # parser.add_argument('--windowslice', default=False, action="store_true", help="Window slice preset augmentation")
-    # parser.add_argument('--windowwarp', default=False, action="store_true", help="Window warp preset augmentation")
-    # parser.add_argument('--rotation', default=False, action="store_true", help="Rotation preset augmentation")
-    # parser.add_argument('--spawner', default=False, action="store_true", help="SPAWNER preset augmentation")
-    # parser.add_argument('--dtwwarp', default=False, action="store_true", help="DTW warp preset augmentation")
-    # parser.add_argument('--shapedtwwarp', default=False, action="store_true", help="Shape DTW warp preset augmentation")
-    # parser.add_argument('--wdba', default=False, action="store_true", help="Weighted DBA preset augmentation")
-    # parser.add_argument('--discdtw', default=False, action="store_true",
-    #                     help="Discrimitive DTW warp preset augmentation")
-    # parser.add_argument('--discsdtw', default=False, action="store_true",
-    #                     help="Discrimitive shapeDTW warp preset augmentation")
-    # parser.add_argument('--extra_tag', type=str, default="", help="Anything extra")
 
     # TimeXer
     parser.add_argument('--patch_len', type=int, default=16, help='patch length')

@@ -57,17 +57,10 @@ def compute_loo_linear_approx(train_idx, val_idx, X_train, Y_train, X_val, Y_val
 
 def evaluate_blocks(X_train, Y_train, X_val, Y_val, X_test, Y_test):
     """
-    对每个训练块评估并打分（分类任务版本）.
-
-    新增 TimeInf 数据质量评价方法。
+    Evaluate and score each training block (classification task version).
     """
-    # 确保标签是整数类型，不需要 one-hot 编码
     fetcher = DataFetcher.from_data_splits(X_train, Y_train, X_val, Y_val, X_test, Y_test, one_hot=False)
-
-    # 分类模型替换为逻辑回归
     pred_model = RegressionSkLearnWrapper(RandomForestClassifier)
-
-    # 初始化结果字典
     scores = {"DataOob": [], "DataShapley": [], "KNNShapley": [], "TimeInf": []}
 
     # DataOob
@@ -113,36 +106,30 @@ def evaluate_blocks(X_train, Y_train, X_val, Y_val, X_test, Y_test):
 
 
 def load_cla_data(filepath):
-    # 从 .ts 文件加载数据
     df, labels = load_from_tsfile_to_dataframe(filepath, return_separate_X_and_y=True,
                                                replace_missing_vals_with='NaN')
-    # 将标签转换为分类类型
     labels = pd.Series(labels, dtype="category")
     class_names = labels.cat.categories
-    labels_df = pd.DataFrame(labels.cat.codes, dtype=np.int8)  # 标签编码为 int8
+    labels_df = pd.DataFrame(labels.cat.codes, dtype=np.int8)
 
-    # 检查每个时间序列的长度，确保每个样本和维度长度一致
-    lengths = df.applymap(lambda x: len(x)).values  # 每个时间序列的长度 (num_samples, num_dimensions)
-
-    horiz_diffs = np.abs(lengths - np.expand_dims(lengths[:, 0], -1))  # 检查同一个样本不同维度间的长度差异
-    if np.sum(horiz_diffs) > 0:  # 若发现不同维度间长度不一致
-        df = df.applymap(subsample)  # 对不一致的序列进行下采样
-
-    # 再次计算长度，确保样本间维度长度一致
     lengths = df.applymap(lambda x: len(x)).values
-    vert_diffs = np.abs(lengths - np.expand_dims(lengths[0, :], 0))  # 检查不同样本间维度的长度差异
-    if np.sum(vert_diffs) > 0:  # 若发现样本间长度不一致
+
+    horiz_diffs = np.abs(lengths - np.expand_dims(lengths[:, 0], -1))
+    if np.sum(horiz_diffs) > 0:
+        df = df.applymap(subsample)
+
+    lengths = df.applymap(lambda x: len(x)).values
+    vert_diffs = np.abs(lengths - np.expand_dims(lengths[0, :], 0))
+    if np.sum(vert_diffs) > 0:
         max_seq_len = int(np.max(lengths[:, 0]))
     else:
         max_seq_len = lengths[0, 0]
 
-    # 将时间序列数据展开，生成 (seq_len, feat_dim) 格式的数据
     df = pd.concat((pd.DataFrame({col: df.loc[row, col] for col in df.columns})
                     .reset_index(drop=True)
                     .set_index(pd.Series(lengths[row, 0] * [row]))
                     for row in range(df.shape[0])), axis=0)
 
-    # 对缺失值进行插值处理
     grp = df.groupby(by=df.index)
     df = grp.transform(interpolate_missing)
 
@@ -155,25 +142,20 @@ def load_cla_data(filepath):
 
 
 def save_scores_to_jsonl(scores, output_file):
-    """为每个块的下标分配评分并保存到 JSONL 文件."""
-
-    # 为每个块的下标分配评分
+    """ Assign scores to the index of each block and save them to a JSONL file. """
     block_scores = {method: [] for method in scores.keys()}
     for method, values in scores.items():
         block_scores[method] = values
 
-    # print("评估完成，每个块的评分:")
-    # for method, values in block_scores.items():
-    #     print(f"{method}: {values}")
-    #     print(len(values))
+    print("Evaluation complete, scores for each block:")
+    for method, values in block_scores.items():
+        print(f"{method}: {values}")
+        print(len(values))
 
-    # 保存结果到 JSONL 文件
     try:
-        # 读取原始 JSONL 文件内容
         with open(output_file, "r") as jsonl_file:
             original_data = [json.loads(line) for line in jsonl_file]
 
-        # 追加新评分字段
         for idx, record in enumerate(original_data):
             record.update({
                 "DataOob": float(block_scores["DataOob"][idx]),
@@ -182,39 +164,27 @@ def save_scores_to_jsonl(scores, output_file):
                 "TimeInf": float(block_scores["TimeInf"][idx]),
             })
 
-        # 写入更新后的数据到新 JSONL 文件
         with open(output_file, "w") as jsonl_file:
             jsonl_file.writelines(json.dumps(record) + "\n" for record in original_data)
 
-        print(f"结果已保存到 {output_file}")
+        print(f"results have been saved to {output_file}")
     except Exception as e:
-        print(f"保存结果时发生错误: {e}")
+        print(f"error occurs while saving results: {e}")
 
 
 
 if __name__ == "__main__":
-    train_filepath = "../datasets/MedicalImages/MedicalImages_TRAIN.ts"
+    # Example usage with replaceable parameters
+    train_filepath = "../datasets/MedicalImages/MedicalImages_TRAIN.ts"  # to be changed
     X_train, Y_train = load_cla_data(train_filepath)
-
-    test_filepath = "../datasets/MedicalImages/MedicalImages_TEST.ts"
+    test_filepath = "../datasets/MedicalImages/MedicalImages_TEST.ts"  # to be changed
     X_test, Y_test = load_cla_data(test_filepath)
+    output_file = "../middleware/MedicalImages/annotation.jsonl"  # to be changed
 
-    output_file = "../middleware/MedicalImages/annotation.jsonl"
-
-    # 先分离出验证集
     X_test, X_val, Y_test, Y_val = train_test_split(X_test, Y_test, test_size=0.2, random_state=42, stratify=Y_test)
-
-    # print(Y_train)
-    # print(Y_val)
-    # print(Y_test)
     print("Train class distribution:", np.unique(Y_train, return_counts=True))
     print("Validation class distribution:", np.unique(Y_val, return_counts=True))
     print("Test class distribution:", np.unique(Y_test, return_counts=True))
 
-    # print(f"训练样本数量: {len(X_train)}")
-    # print(f"验证样本数量: {len(X_val)}")
-    # print(f"测试样本数量: {len(X_test)}")
-
     scores = evaluate_blocks(X_train, Y_train, X_val, Y_val, X_test, Y_test)
-
     save_scores_to_jsonl(scores, output_file)

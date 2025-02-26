@@ -96,7 +96,7 @@ class SerializerSettings:
     - decimal_point (str): String representation for the decimal point.
     """
     base: int = 10
-    prec: int = 3  #需要更改
+    prec: int = 3
     signed: bool = True
     fixed_length: bool = False
     max_val: float = 1e7
@@ -109,7 +109,6 @@ class SerializerSettings:
     missing_str: str = ' Nan'
 
 def serialize_arr(arr, settings: SerializerSettings):
-    #将一个数字数组（例如时间序列数据）序列化为字符串表示形式，基于提供的序列化配置 (SerializerSettings见上) 进行灵活的格式化操作
     """
     Serialize an array of numbers (a time series) into a string based on the provided settings.
 
@@ -123,11 +122,9 @@ def serialize_arr(arr, settings: SerializerSettings):
     # max_val is only for fixing the number of bits in nunm2repr so it can be vmapped
     assert np.all(np.abs(arr[~np.isnan(arr)]) <= settings.max_val), f"abs(arr) must be <= max_val,\
          but abs(arr)={np.abs(arr)}, max_val={settings.max_val}"
-    #检查输入数组中的非缺失值是否满足最大值限制
     
     if not settings.signed:
         assert np.all(arr[~np.isnan(arr)] >= 0), f"unsigned arr must be >= 0"
-        #如果不启用了 signed（允许负数），检查是否所有值均大于等于 0
         plus_sign = minus_sign = ''
     else:
         plus_sign = settings.plus_sign
@@ -136,14 +133,12 @@ def serialize_arr(arr, settings: SerializerSettings):
     vnum2repr = partial(vec_num2repr,base=settings.base,prec=settings.prec,max_val=settings.max_val)
     sign_arr, digits_arr = vnum2repr(np.where(np.isnan(arr),np.zeros_like(arr),arr))
     ismissing = np.isnan(arr)
-    #使用 vec_num2repr 函数（假定是外部定义）将数字转为其符号部分（sign_arr）和数字部分（digits_arr）。对于缺失值 (NaN)，用零替代以避免错误。
     
     def tokenize(arr):
         return ''.join([settings.bit_sep+str(b) for b in arr])
-    #定义了数字数组到字符串的拼接方式，用 bit_sep 作为数字间的分隔符
     
     bit_strs = []
-    for sign, digits,missing in zip(sign_arr, digits_arr, ismissing): #序列化过程
+    for sign, digits,missing in zip(sign_arr, digits_arr, ismissing):
         if not settings.fixed_length:
             # remove leading zeros
             nonzero_indices = np.where(digits != 0)[0]
@@ -161,7 +156,7 @@ def serialize_arr(arr, settings: SerializerSettings):
             bit_strs.append(settings.missing_str)
         else:
             bit_strs.append(sign_sep + digits)
-    bit_str = settings.time_sep.join(bit_strs) #拼接所有时间步长
+    bit_str = settings.time_sep.join(bit_strs)
     bit_str += settings.time_sep # otherwise there is ambiguity in number of digits in the last time step
     return bit_str
 

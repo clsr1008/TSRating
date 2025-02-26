@@ -36,19 +36,16 @@ def get_scaler(history, alpha=0.95, beta=0.3, basic=False):
     Returns:
         Scaler: Configured scaler object.
     """
-    history = history[~np.isnan(history)]  # 去除 NaN 值 #True
-    if basic:  # 基础缩放
+    history = history[~np.isnan(history)]
+    if basic:
         q = np.maximum(np.quantile(np.abs(history), alpha), .01)
-        # 取绝对值的分位数（alpha 指定，如 95%），并保证缩放因子 q 不低于 0.01
         def transform(x):
             return x / q
 
         def inv_transform(x):
             return x * q
-        # 转换函数 transform 将数据除以 q，反向转换函数 inv_transform 乘以 q
-    else:  # 带偏移缩放
+    else:
         min_ = np.min(history) - beta * (np.max(history) - np.min(history))
-        # 计算最小值 min_，偏移范围由 beta 控制
         q = np.quantile(history - min_, alpha)
         if q == 0:
             q = 1
@@ -58,9 +55,7 @@ def get_scaler(history, alpha=0.95, beta=0.3, basic=False):
 
         def inv_transform(x):
             return x * q + min_
-        # 转换函数 transform 执行偏移并除以 q，反向转换函数 inv_transform 恢复偏移
     return Scaler(transform=transform, inv_transform=inv_transform)
-    # 返回一个 Scaler 对象，包含 transform 和 inv_transform 两个方法
 
 
 def truncate_input(input_arr, input_str, settings, model, steps):
@@ -79,22 +74,20 @@ def truncate_input(input_arr, input_str, settings, model, steps):
             - input_str (str): Truncated serialized input time series.
     """
     context_length = context_lengths[model]
-    # 根据模型名称获取对应的分词方式和允许的最大令牌数量
     input_str_chuncks = input_str.split(settings.time_sep)
-    # 分割序列化输入
-    for i in range(len(input_str_chuncks) - 1):  # 逐步截断
+    for i in range(len(input_str_chuncks) - 1):
         truncated_input_str = settings.time_sep.join(input_str_chuncks[i:])
         # add separator if not already present
         if not truncated_input_str.endswith(settings.time_sep):
-            truncated_input_str += settings.time_sep  ##将从第 i 块开始的内容重新拼接成字符串
+            truncated_input_str += settings.time_sep
         input_tokens = tokenize(truncated_input_str, model)
         num_input_tokens = len(input_tokens)
         avg_token_length = num_input_tokens / (len(input_str_chuncks) - i)
         num_output_tokens = avg_token_length * steps * STEP_MULTIPLIER
-        if num_input_tokens + num_output_tokens <= context_length:  # 检查输入和输出总令牌数是否在上下文长度限制内
-            truncated_input_arr = input_arr[i:]  # 如果条件满足，从当前截断点 i 处截断原始时间序列数组。
+        if num_input_tokens + num_output_tokens <= context_length:
+            truncated_input_arr = input_arr[i:]
             break
-    if i > 0:  # 截断警告
+    if i > 0:
         print(f'Warning: Truncated input from {len(input_arr)} to {len(truncated_input_arr)}')
     return truncated_input_arr, truncated_input_str
 

@@ -16,44 +16,36 @@ np.random.seed(seed)
 
 def get_dataset_from_excel(file_path, column_name, start_idx, end_idx):
     """
-    从 Excel 文件加载数据并提取指定列，采样指定范围的数据。
+        Load data from an Excel file and extract the specified column, sampling the data within the specified range.
 
-    参数:
-        file_path (str): Excel 文件路径。
-        column_name (str): 要提取的列名。
-        start_idx (int): 数据开始的行索引。
-        end_idx (int): 数据结束的行索引。
+        Parameters:
+            file_path (str): Path to the Excel file.
+            column_name (str): The name of the column to extract.
+            start_idx (int): The row index where the data starts.
+            end_idx (int): The row index where the data ends.
 
-    返回:
-        pd.Series: 提取的时间序列数据。
+        Returns:
+            pd.Series: The extracted time series data.
     """
-    # 读取 Excel 文件
     df = pd.read_csv(file_path)
-    # 提取指定列并采样指定范围的数据
     series = df[column_name].iloc[start_idx:end_idx]
     return pd.Series(series.values, index=pd.RangeIndex(len(series)))
 
 
 def preprocess_data(train, settings, model, blocklength):
     """
-    对训练和测试数据进行预处理，包括缩放、序列化和截断。
+        Preprocess training data, including division and serialization.
     """
     if isinstance(settings, dict):
         settings = SerializerSettings(**settings)
-    # 将数据集转换为 Pandas Series 格式
     if not isinstance(train, pd.Series):
         train = pd.Series(train, index=pd.RangeIndex(len(train)))
     # input_arrs = train.values.reshape(-1, 1)
-    # # # 为整个时间序列创建缩放器
     # scaler = StandardScaler()
     # scaler.fit(input_arrs)
-    # # 对训练数据进行缩放
     # transformed_input_arrs = np.array(scaler.transform(input_arrs)).flatten()
-    # 划分滑动窗口
     arr_slices = generate_sliding_windows(train.values, blocklength)
-    # 序列化标准化后的训练数据
     str_slices = [serialize_arr(scaled_input_arr, settings) for scaled_input_arr in arr_slices]
-    # 计算token数量
     num_tokens = count_tokens(str_slices, model)
     return arr_slices, str_slices, num_tokens
 
@@ -66,7 +58,7 @@ def count_tokens(input_strs, model):
 
 def generate_sliding_windows(data, block_length):
     """
-    根据给定的一维 numpy 数组和窗口长度，生成滑动窗口。
+        Generate sliding windows based on the given one-dimensional array and window length.
     """
     slices = []
     for i in range(len(data) - block_length + 1):
@@ -77,38 +69,37 @@ def generate_sliding_windows(data, block_length):
 def get_dataset_by_name(file_path, column_name, start_idx, end_idx, prec, blocklength,
                         testfrac=0.3, model="gpt-4o-mini"):
     """
-    根据文件路径和列名加载并预处理单个数据集。
+        Load and preprocess the dataset based on the given parameters, splitting it into training and testing sets.
 
-    参数:
-        file_path (str): 数据文件路径。
-        column_name (str): 数据列名。
-        start_idx (int): 数据起始行索引。
-        end_idx (int): 数据结束行索引。
-        testfrac (float): 测试集占比。
-        settings: 序列化设置。
-        alpha (float): 缩放器的 alpha 参数。
-        beta (float): 缩放器的 beta 参数。
-        basic (bool): 是否使用基础缩放器。
-        model (str): 使用的模型名称。
+        Parameters:
+            file_path (str): Path to the Excel file containing the dataset.
+            column_name (str): The name of the column to extract from the dataset.
+            start_idx (int): The starting index for extracting the data.
+            end_idx (int): The ending index for extracting the data.
+            prec (int): Precision for the data serialization.
+            blocklength (int): The length of the data blocks for preprocessing.
+            testfrac (float, optional): The fraction of the data to be used for testing (default is 0.3).
+            model (str, optional): The model to be used for preprocessing (default is "gpt-4o-mini").
 
-    返回:
-        dict: 包含训练集、测试集及预处理后数据的字典。
+        Returns:
+            dict: A dictionary containing the following keys:
+                - "train": The training data as a pandas Series.
+                - "test": The testing data as a pandas Series.
+                - "arr_slices": The preprocessed data in array slices.
+                - "str_slices": The preprocessed data in string slices.
+                - "num_tokens": The number of tokens in the preprocessed data.
     """
-    # 加载数据集
     series = get_dataset_from_excel(file_path, column_name, start_idx, end_idx)
 
-    # 划分训练集和测试集
     splitpoint = int(len(series) * (1 - testfrac))
     train = series.iloc[:splitpoint]
     test = series.iloc[splitpoint:]
 
     settings = SerializerSettings(prec=prec)
-    # 对数据进行预处理
     arr_slices, str_slices, num_tokens = preprocess_data(
         train=train, settings=settings, model=model, blocklength=blocklength
     )
 
-    # 返回处理后的数据集
     return {
         "train": train,
         "test": test,
@@ -119,45 +110,40 @@ def get_dataset_by_name(file_path, column_name, start_idx, end_idx, prec, blockl
 
 def save_to_jsonl(input_arrs, input_strs, file_path, shuffle=False):
     """
-    将 input_arrs 和 input_strs 转换为 JSONL 格式，并添加 index 字段。
+        Convert input_arrs and input_strs to JSONL format and add an index field.
 
-    参数:
-        input_arrs (list): numpy.ndarray 转换为列表后的输入数组。
-        input_strs (list): 输入字符串列表。
-        file_path (str): 保存的 JSONL 文件路径。
-        shuffle (bool): 是否打乱数据顺序，默认为 False。
+        Parameters:
+            input_arrs (list): A list of input arrays converted from numpy.ndarray.
+            input_strs (list): A list of input strings.
+            file_path (str): The path to save the JSONL file.
+            shuffle (bool, optional): Whether to shuffle the data order (default is False).
     """
-    # 如果 shuffle 为 True，打乱数据顺序
     if shuffle:
-        # 为每个元素分配原始的索引值
         indexed_data = [(index, arr, string) for index, (arr, string) in enumerate(zip(input_arrs, input_strs))]
-        random.shuffle(indexed_data)  # 打乱数据
-        # 一次性解包数据，恢复为原来的 3 个列表
-        indices, input_arrs, input_strs = zip(*indexed_data)  # 解包为 indices, input_arrs, input_strs
+        random.shuffle(indexed_data)
+        indices, input_arrs, input_strs = zip(*indexed_data)
     else:
-        indices = list(range(len(input_arrs)))  # 如果不打乱，直接生成顺序索引
+        indices = list(range(len(input_arrs)))
 
-    # 保存 JSONL 文件
     with open(file_path, "w") as f:
         for index, (arr, string) in zip(indices, zip(input_arrs, input_strs)):
-            # 创建 JSON 对象
             data = {
                 "index": index,
                 "input_arr": arr.tolist(),
                 "input_str": string
             }
-            # 写入文件，每行一个 JSON 对象
             f.write(json.dumps(data) + "\n")
 
 
 if __name__ == "__main__":
-    # 示例用法
-    file_path = "../datasets/traffic/traffic.csv"
-    column_name = "OT"
-    start_idx = 4000
-    end_idx = 8000
-    block_length = 128
-    prec = 4
+    # Example usage with replaceable parameters
+    file_path = "../datasets/traffic/traffic.csv"  # to be changed
+    column_name = "OT"  # to be changed
+    start_idx = 4000  # to be changed
+    end_idx = 8000  # to be changed
+    block_length = 128   # to be changed
+    prec = 4  # to be changed
+    jsonl_path = "../middleware/traffic/blocks.jsonl"  # to be changed
 
     data = get_dataset_by_name(file_path, column_name, start_idx, end_idx, prec, block_length)
     print(f"Train shape: {data['train'].shape}, Test shape: {data['test'].shape}")
@@ -166,7 +152,7 @@ if __name__ == "__main__":
     print(type(data['arr_slices'][0]))
     print(f"First serialized input: {data['str_slices'][0]}")
     print(type(data['str_slices'][0]))
-    print("滑动窗口最大的token数是", max(data['num_tokens']))
+    print("The maximum number of tokens in the sliding window is ", max(data['num_tokens']))
 
-    save_to_jsonl(data['arr_slices'], data['str_slices'], "../middleware/traffic/blocks.jsonl")
-    print("数据已经写入jsonl")
+    save_to_jsonl(data['arr_slices'], data['str_slices'], jsonl_path)
+    print("The data has been written to JSONL.")

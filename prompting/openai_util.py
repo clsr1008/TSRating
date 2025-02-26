@@ -21,7 +21,7 @@ def query_openai(prompt: str,
                  retries: int = 1,
                  log_file_path: int = "openai_api_cost.jsonl") -> List[str]:
     enc = tiktoken.encoding_for_model("gpt-4o-mini")
-    client = OpenAI(
+    client = OpenAI( # you can replace it with your own OPENAI proxy
         api_key= os.environ["OPENAI_API_KEY"],
         base_url="https://api.chatanywhere.tech/v1"
     )
@@ -34,12 +34,12 @@ def query_openai(prompt: str,
         messages.append({"role": "system", "content": system_prompt})
     messages.append({"role": "user", "content": prompt})
 
-    label_tokens = [enc.encode(label) for label in labels] #将一组标签（labels）转换为模型能够处理的tokens
-    logit_bias = {  #为每个token设置一个强偏置值，以确保模型更倾向于输出这些令牌
-        str(token): 100  #偏置值设置为 100，极大地增加它们在模型输出中的可能性
-        for token in set.union(*(set(tokens) for tokens in label_tokens)) #包含所有标签token的集合
+    label_tokens = [enc.encode(label) for label in labels]
+    logit_bias = {
+        str(token): 100
+        for token in set.union(*(set(tokens) for tokens in label_tokens))
     }
-    max_tokens = max(len(tokens) for tokens in label_tokens) #计算所有标签中最长的token序列长度
+    max_tokens = max(len(tokens) for tokens in label_tokens)
 
     while not is_ok:
         try:
@@ -54,31 +54,27 @@ def query_openai(prompt: str,
                 logit_bias=logit_bias,
             )
 
-            # 记录请求结束时间
             # end_time = time.time()
-            #
-            # # 计算处理时间
             # processing_time = end_time - start_time
             # print(f"Model processing time: {processing_time:.2f} seconds")
 
             is_ok = True
         except Exception as error:
-            if "Please retry after" in str(error): #这是 OpenAI API 常见的速率限制（Rate Limit）提示
-                timeout = int(str(error).split("Please retry after ")[1].split(" second")[0]) + 5*RANDOM.random() #提取重试等待时间并添加随机偏移量
+            if "Please retry after" in str(error):
+                timeout = int(str(error).split("Please retry after ")[1].split(" second")[0]) + 5*RANDOM.random()
                 print(f"Wait {timeout}s before OpenAI API retry ({error})")
-                time.sleep(timeout) #延迟重试
-            elif retry_count < retries: #判断当前的重试次数是否小于最大允许的重试次数
+                time.sleep(timeout)
+            elif retry_count < retries:
                 print(f"OpenAI API retry for {retry_count} times ({error})")
                 time.sleep(10)
                 retry_count += 1
-            else: #重试次数已经达到最大，不再重试
+            else:
                 print(f"OpenAI API failed for {retry_count} times ({error})")
                 return []
 
     generations = [choice.message.content for choice in response.choices]
     generations = [text.strip() for text in generations]
     # print(generations)
-    #提取模型回答，如['A', 'A', 'A', 'A', 'A', 'B', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'B', 'A', 'A']
     return generations
 
 

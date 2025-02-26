@@ -1,14 +1,10 @@
 import os
 import matplotlib
-matplotlib.use('TkAgg')  # 设置后端为 TkAgg
-
+matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 
 
-# 数据
-# 数据
-proportions = [1.0, 0.95, 0.9, 0.85, 0.8, 0.75, 0.7, 0.65, 0.6, 0.55]
-data_removed = [0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45]  # 横轴数据转换
+data_removed = [0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45]
 # data = {
 #     "Random": [0.340, 0.349, 0.340, 0.342, 0.346, 0.346, 0.356, 0.351, 0.351, 0.350],
 #     "DataOob": [0.340, 0.344, 0.341, 0.343, 0.345, 0.345, 0.356, 0.359, 0.357, 0.357],
@@ -37,34 +33,26 @@ data = {
 }
 
 
-
-# 绘制折线图
 plt.figure(figsize=(10, 6))
 for score_key, mae_values in data.items():
     plt.plot(data_removed, mae_values, marker='o', label=score_key)
 
-# 图表美化
-# 图表美化并设置字体大小
+
 plt.xlabel('% Data Removed', fontsize=25)
 plt.ylabel('Accuracy', fontsize=25)
 plt.title('CBF with Nonstationary_Transformer', fontsize=28)
 plt.legend(title="Method", title_fontsize=16, fontsize=18)
 plt.grid(alpha=0.5)
 
-# 调整横纵轴刻度字体大小
-plt.xticks(fontsize=20)  # 横轴刻度
-plt.yticks(fontsize=20)  # 纵轴刻度
+plt.xticks(fontsize=20)
+plt.yticks(fontsize=20)
+plt.xticks(data_removed, labels=[f"{int(p * 100)}%" for p in data_removed])
 
-
-# 调整横轴刻度
-plt.xticks(data_removed, labels=[f"{int(p * 100)}%" for p in data_removed])  # 显示百分比
-
-# 保存图片到 results 文件夹
-output_folder = 'results'
-os.makedirs(output_folder, exist_ok=True)  # 创建文件夹如果不存在
+# save plots to results_plots folder
+output_folder = 'results_plots'
+os.makedirs(output_folder, exist_ok=True)
 file_name = 'CBF with Nonstationary_Transformer'
 plt.tight_layout()
 plt.savefig(os.path.join(output_folder, file_name))
 
-# 显示图表
 plt.show()

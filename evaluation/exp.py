@@ -408,7 +408,7 @@ class Exp_Classification():
         # f.close()
         return accuracy
 
-model_dict = {
+model_dict = {  # you can select models from the following dict
             'TimesNet': TimesNet,
             'Linear': Linear,
             'LSTM': LSTM,
