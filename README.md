@@ -2,7 +2,7 @@
 This is the official repository for our paper **TSRating: Selecting High-Quality Time Series Data by Prompting LLMs**
 and contains code for (1) data preparation (2) prompting LLMs with quality criteria (3) training TSRater  (4) scoring time series data samples  (5) evaluating TSRating on real time series datasets and models.
 
-![overview](D:\桌面\新建文件夹\tsrating\assets\overview.png)
+![overview](.\assets\overview.png)
 
 ## General Guidance for Running the Code
 
