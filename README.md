@@ -56,7 +56,7 @@ pip install -r requirements.txt
 
 The files `data_preparation/load_forecast_data.py`  and `data_preparation/load_classification_data.py`  can be used to process original datasets from forecasting and classification tasks, respectively.  The processing includes division into sliding blocks and serialization as LLM's input. 
 
-The file `data_preparation/load_Time_300B.py` is designed specifically for sampling and serializing data from the large-scale **Time-300B** dataset.
+The file `data_preparation/load_Time_300B.py` is designed specifically for sampling and serializing data from the large-scale **Time-300B** dataset. The Time-300B dataset can be downloaded from https://huggingface.co/datasets/Maple728/Time-300B.
 
 In addition, we prepare `data_preparation/synthesis_data.py` for **Synthetic Validation** corresponding to Appendix B.2 in our paper. 
 
