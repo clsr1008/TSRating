@@ -1,11 +1,18 @@
 import json
 import torch
 from train_rater import load_moment_model, load_jsonl_data, process_time_series
-from trainer import ScoreModel
+# from trainer import ScoreModel
+
+import sys
+import os
+
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(BASE_DIR)
+from meta_rater.trainer import ScoreModel
 import time
 
 
-def annotate_data(score_model_paths, input_jsonl_path, output_jsonl_path, input_dim=768):
+def annotate_data(score_model_paths, input_jsonl_path, output_jsonl_path, input_dim=768, hidden_dim=256, num_layers=3):
     """
         Use multiple scoring models to score the JSONL data and save the results to a new JSONL file.
 
@@ -17,7 +24,8 @@ def annotate_data(score_model_paths, input_jsonl_path, output_jsonl_path, input_
     """
     models = {}
     for aspect, model_path in score_model_paths.items():
-        model = ScoreModel(input_dim=input_dim)
+        # model = ScoreModel(input_dim=input_dim)
+        model = ScoreModel(input_dim, hidden_dim, num_layers)
         model.load_state_dict(torch.load(model_path))
         model.eval()
         models[aspect] = model

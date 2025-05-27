@@ -1,6 +1,6 @@
-# **TSRating: Selecting High-Quality Time Series Data by Prompting LLMs**
-This is the official repository for our paper **TSRating: Selecting High-Quality Time Series Data by Prompting LLMs**
-and contains code for (1) data preparation (2) prompting LLMs with quality criteria (3) training TSRater  (4) scoring time series data samples  (5) evaluating TSRating on real time series datasets and models.
+# TSRating: Rating Quality of Diverse Time Series Data by Meta-learning from LLM Judgment
+This is the official repository for our paper **TSRating: Rating Quality of Diverse Time Series Data by Meta-learning from LLM Judgment**
+and contains code for (1) data preparation (2) prompting LLMs with quality criteria (3) training meta-TSRater  (4) scoring time series data samples  (5) evaluating TSRating on real time series datasets and models.
 
 ![overview](https://github.com/clsr1008/TSRating/blob/main/assets/overview.png)
 
@@ -35,7 +35,7 @@ In our project, we have established a `middleware` directory to store the interm
 
 ## Datasets
 
-This table outlines the datasets used in the project for various forecasting and classification tasks. All datasets are available for download on Hugging Face.
+This table outlines the datasets used in the project for various forecasting and classification tasks. All datasets are available for download on Hugging Face or can be access via https://drive.google.com/drive/folders/13Cg1KYOlzM5C7K8gK8NfC-F3EYxkM3D2
 
 | **Task**                   | **Dataset**s                                 |
 | -------------------------- | -------------------------------------------- |
@@ -56,6 +56,8 @@ pip install -r requirements.txt
 
 The files `data_preparation/load_forecast_data.py`  and `data_preparation/load_classification_data.py`  can be used to process original datasets from forecasting and classification tasks, respectively.  The processing includes division into sliding blocks and serialization as LLM's input. 
 
+The file `data_preparation/load_Time_300B.py` is designed specifically for sampling and serializing data from the large-scale **Time-300B** dataset.
+
 In addition, we prepare `data_preparation/synthesis_data.py` for **Synthetic Validation** corresponding to Appendix B.2 in our paper. 
 
 ### Prompting LLMs with quality criteria
@@ -63,7 +65,12 @@ In addition, we prepare `data_preparation/synthesis_data.py` for **Synthetic Val
 The script `prompting/run_score_pairwise.py` is used to collect pairwise judgments of LLMs.  The folder `prompting/templates/` contains the templates used in the paper. You can modify running configuration such as template_file, model and generations from the constructed command. The output dataset will be stored as `<output path>`, which is further converted to a excel file. 
 
 ### Training TSRater
-Run `scoring/train_rater.py` to train the TSRater models for quality criteria. You can override the default hyperparameters or apply grid search for hyperparameter tuning. The trained models will be stored in the middleware folder.
+We support two modes for training the TSRater model: **single-rater** and **meta-rater**.
+
+Single-rater mode: Run `scoring/train_rater.py` to train a TSRater model on a single dataset for a specific quality criterion (e.g., trend, frequency, amplitude, or pattern). You can override the default hyperparameters or apply grid search for hyperparameter tuning. The trained models will be stored in the  `middleware/` folder.
+
+Meta-rater mode: Use `meta_rater/meta_main.py` to train the meta-TSRater across multiple datasets. The model learns to generalize from diverse tasks. You can specify hyperparameter like adaptation steps, meta learning rate, inner learning rate and so on. After training, use `meta_rater/finetune_and_test.py` to perform few-shot finetuning and evaluation on a target dataset. 
+
 ### Scoring TS samples
 `scoring/annotate.py` takes a dataset and a TSRater model and adds new columns to the dataset for the quality ratings. The quality ratings for all criteria are saved in `annotation.jsonl` file. Apart from our TSRating method, we investigate other baseline methods, scoring forecasting datasets datasets via `scoring/baseline_annotate.py` and classification dataset via `scoring/baseline_anotate_classification.py`. 
 

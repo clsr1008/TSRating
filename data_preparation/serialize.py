@@ -99,7 +99,7 @@ class SerializerSettings:
     prec: int = 3
     signed: bool = True
     fixed_length: bool = False
-    max_val: float = 1e7
+    max_val: float = 1.5e9
     time_sep: str = ', '
     bit_sep: str = ''
     plus_sign: str = ''
