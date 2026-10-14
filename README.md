@@ -82,5 +82,12 @@ By running `evaluation/evaluate.py`, we can select data samples based on the obt
 
 ## Citation
 ```bibtex
-@
+@inproceedings{wu2026rating,
+  title={Rating quality of diverse time series data by meta-learning from llm judgment},
+  author={Wu, Shunyu and Li, Dan and Feng, Wenjie and Ye, Haozheng and Lou, Jian and Ng, See-Kiong},
+  booktitle={International Conference on Learning Representations},
+  volume={2026},
+  pages={37029--37065},
+  year={2026}
+}
 ```
